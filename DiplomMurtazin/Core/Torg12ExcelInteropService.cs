@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
+using Excel = Microsoft.Office.Interop.Excel;
 
 namespace DiplomMurtazin.Core
 {
@@ -31,266 +31,210 @@ namespace DiplomMurtazin.Core
             return Type.GetTypeFromProgID("Excel.Application") != null;
         }
 
-        public static void ExportFromTemplate(
-            string templatePath,
-            string outputPath,
-            string docNumber,
-            DateTime docDate,
-            string receiverName,
-            string receiverAddress,
-            string basis,
-            IEnumerable<Torg12ExcelRow> rows)
-        {
-            if (!File.Exists(templatePath))
-                throw new FileNotFoundException("Не найден шаблон ТОРГ-12", templatePath);
-
-            if (!IsExcelInstalled())
-                throw new InvalidOperationException("Microsoft Excel не установлен. Нужен для экспорта ТОРГ-12 по шаблону.");
-
-            File.Copy(templatePath, outputPath, true);
-
-            dynamic excel = null;
-            dynamic wb = null;
-            dynamic ws = null;
-
-            try
-            {
-                excel = Activator.CreateInstance(Type.GetTypeFromProgID("Excel.Application"));
-                excel.Visible = false;
-                excel.DisplayAlerts = false;
-
-                wb = excel.Workbooks.Open(outputPath);
-                ws = wb.Worksheets[1];
-
-                // Find header cells by label search (robust across template variants)
-                SetNearLabel(ws, new[] { "Номер", "№" }, docNumber);
-                SetNearLabel(ws, new[] { "Дата" }, docDate.ToString("dd.MM.yyyy"));
-                SetNearLabel(ws, new[] { "Кому отпустить", "Грузополучатель", "Получатель" }, receiverName);
-                if (!string.IsNullOrWhiteSpace(receiverAddress))
-                    SetNearLabel(ws, new[] { "Адрес", "Адрес получателя" }, receiverAddress);
-                if (!string.IsNullOrWhiteSpace(basis))
-                    SetNearLabel(ws, new[] { "Основание", "Основание отпуска" }, basis);
-
-                // Locate table header row
-                var tableHeader = FindFirstCellContains(ws, new[] { "Наименование", "Наименование товара" });
-                if (!tableHeader.HasValue)
-                    throw new InvalidOperationException("Не удалось найти таблицу позиций в шаблоне ТОРГ-12 (заголовок 'Наименование').");
-
-                int headerRow = tableHeader.Value.Row;
-                int nameCol = tableHeader.Value.Column;
-
-                // Try to locate other columns near header
-                int qtyCol = FindInRow(ws, headerRow, new[] { "Кол", "Количество" }) ?? (nameCol + 1);
-                int priceCol = FindInRow(ws, headerRow, new[] { "Цена" }) ?? (qtyCol + 1);
-                int sumCol = FindInRow(ws, headerRow, new[] { "Сумма", "Стоимость" }) ?? (priceCol + 1);
-                int? barcodeCol = FindInRow(ws, headerRow, new[] { "Штрих", "Код", "Артикул" });
-
-                int startRow = headerRow + 1;
-                int i = 0;
-                foreach (var r in rows)
-                {
-                    int rowIndex = startRow + i;
-                    ws.Cells[rowIndex, nameCol].Value = r.ProductName;
-                    if (barcodeCol.HasValue)
-                        ws.Cells[rowIndex, barcodeCol.Value].Value = r.Barcode;
-                    ws.Cells[rowIndex, qtyCol].Value = r.Quantity;
-                    ws.Cells[rowIndex, priceCol].Value = (double)r.UnitPrice;
-                    ws.Cells[rowIndex, sumCol].Value = (double)(r.UnitPrice * r.Quantity);
-                    i++;
-                }
-
-                wb.Save();
-                wb.Close(true);
-            }
-            finally
-            {
-                try { if (wb != null) Marshal.FinalReleaseComObject(wb); } catch { }
-                try { if (ws != null) Marshal.FinalReleaseComObject(ws); } catch { }
-                try
-                {
-                    if (excel != null)
-                    {
-                        excel.Quit();
-                        Marshal.FinalReleaseComObject(excel);
-                    }
-                }
-                catch { }
-            }
-        }
-
         public static Torg12ExcelData Import(string filePath)
         {
             if (!File.Exists(filePath))
-                throw new FileNotFoundException("Файл ТОРГ-12 не найден", filePath);
+                throw new FileNotFoundException("Файл не найден", filePath);
 
-            if (!IsExcelInstalled())
-                throw new InvalidOperationException("Microsoft Excel не установлен. Нужен для импорта ТОРГ-12 из .xls.");
-
-            dynamic excel = null;
-            dynamic wb = null;
-            dynamic ws = null;
+            Excel.Application excel = null;
+            Excel.Workbook wb = null;
+            Excel.Worksheet ws = null;
 
             try
             {
-                excel = Activator.CreateInstance(Type.GetTypeFromProgID("Excel.Application"));
-                excel.Visible = false;
-                excel.DisplayAlerts = false;
-
+                excel = new Excel.Application();
                 wb = excel.Workbooks.Open(filePath, ReadOnly: true);
-                ws = wb.Worksheets[1];
+                ws = (Excel.Worksheet)wb.Worksheets[1];
 
                 var result = new Torg12ExcelData
                 {
                     DocumentDate = DateTime.Today
                 };
 
-                result.DocumentNumber = GetNearLabel(ws, new[] { "Номер", "№" });
-                var dateStr = GetNearLabel(ws, new[] { "Дата" });
-                if (DateTime.TryParse(dateStr, out DateTime parsedDate))
-                    result.DocumentDate = parsedDate;
+                var used = ws.UsedRange;
 
-                result.ReceiverName = GetNearLabel(ws, new[] { "Кому отпустить", "Грузополучатель", "Получатель" });
-                result.ReceiverAddress = GetNearLabel(ws, new[] { "Адрес", "Адрес получателя" });
-                result.Basis = GetNearLabel(ws, new[] { "Основание", "Основание отпуска" });
+                int rows = used.Rows.Count;
+                int cols = used.Columns.Count;
 
-                var tableHeader = FindFirstCellContains(ws, new[] { "Наименование", "Наименование товара" });
-                if (!tableHeader.HasValue)
-                    throw new InvalidOperationException("Не удалось найти таблицу позиций (заголовок 'Наименование').");
+                int headerRow = -1;
+                int nameCol = -1;
 
-                int headerRow = tableHeader.Value.Row;
-                int nameCol = tableHeader.Value.Column;
-                int qtyCol = FindInRow(ws, headerRow, new[] { "Кол", "Количество" }) ?? (nameCol + 1);
-                int priceCol = FindInRow(ws, headerRow, new[] { "Цена" }) ?? (qtyCol + 1);
-                int? barcodeCol = FindInRow(ws, headerRow, new[] { "Штрих", "Код", "Артикул" });
+                // ищем "Наименование"
+                for (int r = 1; r <= rows; r++)
+                {
+                    for (int c = 1; c <= cols; c++)
+                    {
+                        var val = GetCell(used, r, c);
+                        if (val == null) continue;
+
+                        string s = val.ToString();
+
+                        if (s.IndexOf("Наименование", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            headerRow = r;
+                            nameCol = c;
+                            break;
+                        }
+                    }
+                    if (headerRow != -1) break;
+                }
+
+                if (headerRow == -1)
+                    throw new Exception("Не найдена таблица (Наименование)");
+
+                int qtyCol = nameCol + 1;
+                int priceCol = nameCol + 2;
 
                 int row = headerRow + 1;
-                for (int safety = 0; safety < 500; safety++)
+
+                while (true)
                 {
-                    string name = Convert.ToString(ws.Cells[row, nameCol].Value)?.Trim();
-                    if (string.IsNullOrWhiteSpace(name))
-                        break;
+                    var nameVal = GetCell(ws, row, nameCol);
+                    if (nameVal == null) break;
 
-                    string barcode = barcodeCol.HasValue ? Convert.ToString(ws.Cells[row, barcodeCol.Value].Value)?.Trim() : null;
-                    int qty = TryInt(ws.Cells[row, qtyCol].Value);
-                    decimal price = TryDecimal(ws.Cells[row, priceCol].Value);
+                    string name = nameVal.ToString().Trim();
+                    if (string.IsNullOrWhiteSpace(name)) break;
 
-                    if (qty <= 0)
+                    int qty = ToInt(GetCell(ws, row, qtyCol));
+                    decimal price = ToDecimal(GetCell(ws, row, priceCol));
+
+                    if (qty > 0)
                     {
-                        row++;
-                        continue;
+                        result.Rows.Add(new Torg12ExcelRow
+                        {
+                            ProductName = name,
+                            Quantity = qty,
+                            UnitPrice = price
+                        });
                     }
-
-                    result.Rows.Add(new Torg12ExcelRow
-                    {
-                        ProductName = name,
-                        Barcode = barcode,
-                        Quantity = qty,
-                        UnitPrice = price
-                    });
 
                     row++;
                 }
 
                 return result;
             }
+            catch (Exception ex)
+            {
+                File.WriteAllText("excel_error.log", ex.ToString());
+                throw;
+            }
             finally
             {
-                try { if (wb != null) { wb.Close(false); Marshal.FinalReleaseComObject(wb); } } catch { }
-                try { if (ws != null) Marshal.FinalReleaseComObject(ws); } catch { }
-                try
-                {
-                    if (excel != null)
-                    {
-                        excel.Quit();
-                        Marshal.FinalReleaseComObject(excel);
-                    }
-                }
-                catch { }
+                if (wb != null) wb.Close(false);
+                if (excel != null) excel.Quit();
+
+                Release(ws);
+                Release(wb);
+                Release(excel);
             }
         }
 
-        private static int TryInt(object v)
+        // ================= helpers =================
+
+        private static object GetCell(object sheet, int r, int c)
         {
-            if (v is null) return 0;
-            if (v is int i) return i;
-            if (v is double d) return (int)Math.Round(d);
-            if (int.TryParse(Convert.ToString(v), out var r)) return r;
+            try
+            {
+                if (sheet is Excel.Range range)
+                    return range.Cells[r, c].Value2;
+
+                if (sheet is Excel.Worksheet ws)
+                    return ((Excel.Range)ws.Cells[r, c]).Value2;
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static int ToInt(object v)
+        {
+            if (v == null) return 0;
+            if (v is double d) return (int)d;
+            if (int.TryParse(v.ToString(), out var r)) return r;
             return 0;
         }
 
-        private static decimal TryDecimal(object v)
+        private static decimal ToDecimal(object v)
         {
-            if (v is null) return 0m;
-            if (v is decimal m) return m;
+            if (v == null) return 0;
             if (v is double d) return (decimal)d;
-            var s = Convert.ToString(v)?.Replace(',', '.');
-            if (decimal.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var r))
+
+            var s = v.ToString().Replace(',', '.');
+            if (decimal.TryParse(s, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var r))
                 return r;
-            return 0m;
+
+            return 0;
         }
-
-        private static void SetNearLabel(dynamic ws, string[] labelVariants, string value)
+        public static void ExportFromTemplate(
+    string templatePath,
+    string outputPath,
+    string documentNumber,
+    DateTime documentDate,
+    string receiverName,
+    string receiverAddress,
+    string basis,
+    List<Torg12ExcelRow> rows)
         {
-            var labelCell = FindFirstCellContains(ws, labelVariants);
-            if (!labelCell.HasValue) return;
-            // Try right cell first, else next row same col
-            ws.Cells[labelCell.Row, labelCell.Column + 1].Value = value;
-        }
+            if (!File.Exists(templatePath))
+                throw new FileNotFoundException("Шаблон Excel не найден", templatePath);
 
-        private static string GetNearLabel(dynamic ws, string[] labelVariants)
-        {
-            var labelCell = FindFirstCellContains(ws, labelVariants);
-            if (!labelCell.HasValue) return null;
-            var right = ws.Cells[labelCell.Row, labelCell.Column + 1].Value;
-            if (right != null && !(right is DBNull)) return Convert.ToString(right);
-            var down = ws.Cells[labelCell.Row + 1, labelCell.Column].Value;
-            return down != null ? Convert.ToString(down) : null;
-        }
+            Excel.Application excel = null;
+            Excel.Workbook wb = null;
+            Excel.Worksheet ws = null;
 
-        private static (int Row, int Column)? FindFirstCellContains(dynamic ws, string[] variants)
-        {
-            dynamic used = ws.UsedRange;
-            int rows = used.Rows.Count;
-            int cols = used.Columns.Count;
-
-            for (int r = 1; r <= rows; r++)
+            try
             {
-                for (int c = 1; c <= cols; c++)
-                {
-                    var v = used.Cells[r, c].Value;
-                    if (v is null || v is DBNull) continue;
-                    string s = Convert.ToString(v);
-                    if (string.IsNullOrWhiteSpace(s)) continue;
-                    foreach (var varnt in variants)
-                    {
-                        if (s.IndexOf(varnt, StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            return (used.Row + r - 1, used.Column + c - 1);
-                        }
-                    }
-                }
-            }
-            return null;
-        }
+                excel = new Excel.Application();
+                excel.Visible = false;
 
-        private static int? FindInRow(dynamic ws, int row, string[] variants)
-        {
-            dynamic used = ws.UsedRange;
-            int cols = used.Columns.Count;
-            for (int c = 1; c <= cols; c++)
-            {
-                var v = ws.Cells[row, c].Value;
-                if (v is null) continue;
-                string s = Convert.ToString(v);
-                if (string.IsNullOrWhiteSpace(s)) continue;
-                foreach (var varnt in variants)
+                wb = excel.Workbooks.Open(templatePath);
+                ws = (Excel.Worksheet)wb.Worksheets[1];
+
+                // ====== ШАПКА (подстрой под свой шаблон если нужно) ======
+                ((Excel.Range)ws.Cells[26, 50]).Value2 = documentNumber;
+                ((Excel.Range)ws.Cells[26, 63]).Value2 = documentDate.ToShortDateString();
+                ((Excel.Range)ws.Cells[12, 12]).Value2 = receiverName + "   " + receiverAddress;
+                ((Excel.Range)ws.Cells[18, 9]).Value2 = basis;
+
+                int startRow = 31;
+                for (int i = 0; i < rows.Count; i++)
                 {
-                    if (s.IndexOf(varnt, StringComparison.OrdinalIgnoreCase) >= 0)
-                        return c;
+                    var r = rows[i];
+                    int row = startRow + i;
+
+                    // Явное приведение каждой ячейки:
+                    ((Excel.Range)ws.Cells[row, 1]).Value2 = i + 1;
+                    ((Excel.Range)ws.Cells[row, 4]).Value2 = r.ProductName;
+                    ((Excel.Range)ws.Cells[row, 20]).Value2 = r.Barcode;
+                    ((Excel.Range)ws.Cells[row, 39]).Value2 = r.Quantity;
+                    ((Excel.Range)ws.Cells[row, 60]).Value2 = r.UnitPrice;
+                    ((Excel.Range)ws.Cells[row, 89]).Value2 = r.Quantity * r.UnitPrice;
                 }
+
+                wb.SaveAs(outputPath);
             }
-            return null;
+            finally
+            {
+                if (wb != null) wb.Close();
+                if (excel != null) excel.Quit();
+
+                Release(ws);
+                Release(wb);
+                Release(excel);
+            }
+        }
+        private static void Release(object obj)
+        {
+            try
+            {
+                if (obj != null)
+                    Marshal.ReleaseComObject(obj);
+            }
+            catch { }
         }
     }
 }
-
