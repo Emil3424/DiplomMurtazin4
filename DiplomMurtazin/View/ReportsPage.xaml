@@ -1,0 +1,283 @@
+﻿<Page x:Class="DiplomMurtazin.View.ReportsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:core="clr-namespace:DiplomMurtazin.Core"
+      Title="Отчеты"
+      Loaded="Page_Loaded"
+      Unloaded="Page_Unloaded"
+      Background="#ecf0f1">
+
+    <Page.Resources>
+        <core:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+        <StackPanel>
+            <!-- Заголовок -->
+            <TextBlock Text="Отчеты" 
+                       FontSize="32" 
+                       FontWeight="Bold"
+                       Foreground="#2c3e50"
+                       Margin="0,0,0,30"/>
+
+            <!-- ОТЧЕТ ПО ПРОДАЖАМ -->
+            <Border Background="White" 
+                    Padding="20" 
+                    CornerRadius="10" 
+                    Margin="0,0,0,20"
+                    BorderBrush="#bdc3c7"
+                    BorderThickness="1">
+
+                <StackPanel>
+                    <TextBlock Text="Отчет по продажам" 
+                               FontSize="20" 
+                               FontWeight="Bold"
+                               Foreground="#2c3e50"
+                               Margin="0,0,0,15"/>
+
+                    <!-- Выбор периода -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="С:" 
+                                   FontSize="14" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"/>
+
+                        <DatePicker Grid.Column="1" 
+                                    SelectedDate="{Binding StartDate}"
+                                    Height="35"
+                                    Margin="0,0,20,0"/>
+
+                        <TextBlock Grid.Column="2" Text="По:" 
+                                   FontSize="14" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"/>
+
+                        <DatePicker Grid.Column="3" 
+                                    SelectedDate="{Binding EndDate}"
+                                    Height="35"
+                                    Margin="0,0,20,0"/>
+
+                        <Button Grid.Column="4" 
+                                Content="Сформировать" 
+                                Width="150" Height="35"
+                                Command="{Binding GenerateSalesReportCommand}"
+                                Background="#3498db" 
+                                Foreground="White"
+                                Cursor="Hand"
+                                HorizontalAlignment="Left"/>
+                    </Grid>
+
+                    <!-- Сводка -->
+                    <Border Background="#f8f9fa" 
+                            Padding="15" 
+                            CornerRadius="5" 
+                            Margin="0,0,0,15"
+                            Visibility="{Binding SalesSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                        <StackPanel>
+                            <TextBlock Text="Сводка по сотрудникам" 
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,10"/>
+
+                            <DataGrid ItemsSource="{Binding SalesSummary}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      HeadersVisibility="Column"
+                                      RowHeaderWidth="0"
+                                      MaxHeight="200">
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Сотрудник" Binding="{Binding EmployeeName}" Width="200"/>
+                                    <DataGridTextColumn Header="Продаж" Binding="{Binding SalesCount}" Width="80"/>
+                                    <DataGridTextColumn Header="Сумма" Binding="{Binding TotalAmount, StringFormat={}{0:F2} ₽}" Width="120"/>
+                                    <DataGridTextColumn Header="Ср. чек" Binding="{Binding AverageCheck, StringFormat={}{0:F2} ₽}" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Кнопки экспорта -->
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content=" Сохранить в PDF" 
+                                Width="150" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportSalesReportPdfCommand}"
+                                Background="#27ae60" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                        <Button Content=" Сохранить в CSV" 
+                                Width="150" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportSalesReportCsvCommand}"
+                                Background="#16a085" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                        <Button Content=" Сохранить в Excel" 
+                                Width="160" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportSalesReportExcelCommand}"
+                                Background="#2c3e50" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+
+                        <TextBlock Text="{Binding SalesReport.Count, StringFormat=Найдено продаж: {0}}" 
+                                   VerticalAlignment="Center"
+                                   Foreground="#7f8c8d"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ОТЧЕТ ПО ОСТАТКАМ -->
+            <Border Background="White" 
+                    Padding="20" 
+                    CornerRadius="10" 
+                    Margin="0,0,0,20"
+                    BorderBrush="#bdc3c7"
+                    BorderThickness="1">
+
+                <StackPanel>
+                    <TextBlock Text="Отчет по остаткам товаров" 
+                               FontSize="20" 
+                               FontWeight="Bold"
+                               Foreground="#2c3e50"
+                               Margin="0,0,0,15"/>
+
+                    <Button Content="Сформировать отчет" 
+                            Width="200" Height="35"
+                            Command="{Binding GenerateStockReportCommand}"
+                            Background="#3498db" 
+                            Foreground="White"
+                            Cursor="Hand"
+                            HorizontalAlignment="Left"
+                            Margin="0,0,0,15"/>
+
+                    <!-- Предпросмотр остатков -->
+                    <Border Background="#f8f9fa" 
+                            Padding="15" 
+                            CornerRadius="5" 
+                            Margin="0,0,0,15"
+                            Visibility="{Binding StockReport, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                        <StackPanel>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="Сводка:" FontWeight="Bold" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding TotalProducts, StringFormat=Всего: {0}}" Margin="0,0,20,0"/>
+                                <TextBlock Text="{Binding OutOfStockCount, StringFormat=Отсутствуют: {0}}" 
+               Foreground="Red" Margin="0,0,20,0"/>
+                                <TextBlock Text="{Binding BelowMinCount, StringFormat=Ниже минимума: {0}}" 
+               Foreground="Orange"/>
+                            </Grid>
+
+                            <DataGrid ItemsSource="{Binding StockReport}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      HeadersVisibility="Column"
+                                      RowHeaderWidth="0"
+                                      MaxHeight="250">
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="200"/>
+                                    <DataGridTextColumn Header="Категория" Binding="{Binding Category}" Width="120"/>
+                                    <DataGridTextColumn Header="Остаток" Binding="{Binding CurrentStock}" Width="80"/>
+                                    <DataGridTextColumn Header="Мин." Binding="{Binding MinStockLevel}" Width="60"/>
+                                    <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120"/>
+                                    <DataGridTextColumn Header="Стоимость" Binding="{Binding TotalValue, StringFormat={}{0:F2} ₽}" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Кнопки экспорта -->
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content=" Сохранить в PDF" 
+                                Width="150" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportStockReportPdfCommand}"
+                                Background="#27ae60" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                        <Button Content=" Сохранить в CSV" 
+                                Width="150" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportStockReportCsvCommand}"
+                                Background="#16a085" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                        <Button Content=" Сохранить в Excel" 
+                                Width="160" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportStockReportExcelCommand}"
+                                Background="#2c3e50" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- КАТАЛОГ ТОВАРОВ (EXCEL) -->
+            <Border Background="White" 
+                    Padding="20" 
+                    CornerRadius="10"
+                    BorderBrush="#bdc3c7"
+                    BorderThickness="1">
+
+                <StackPanel>
+                    <TextBlock Text="Каталог товаров" 
+                               FontSize="20" 
+                               FontWeight="Bold"
+                               Foreground="#2c3e50"
+                               Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Полный список всех товаров с ценами, характеристиками и остатками"
+                               Foreground="#7f8c8d"
+                               Margin="0,0,0,15"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content=" Сохранить в PDF" 
+                                Width="150" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportProductCatalogPdfCommand}"
+                                Background="#27ae60" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                        <Button Content=" Сохранить в CSV" 
+                                Width="150" Height="35" Margin="0,0,10,0"
+                                Command="{Binding ExportProductCatalogCsvCommand}"
+                                Background="#16a085" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                        <Button Content=" Сохранить в Excel" 
+                                Width="160" Height="35"
+                                Command="{Binding ExportProductCatalogExcelCommand}"
+                                Background="#2c3e50" 
+                                Foreground="White"
+                                Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Статус бар -->
+            <Border Grid.Row="3" 
+                    Background="{Binding StatusColor}"
+                    Padding="10"
+                    CornerRadius="5"
+                    Margin="0,20,0,0">
+                <TextBlock Text="{Binding StatusMessage}" 
+                           Foreground="White"
+                           FontWeight="SemiBold"/>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

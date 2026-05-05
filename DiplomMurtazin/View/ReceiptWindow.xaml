@@ -1,0 +1,278 @@
+﻿<Window x:Class="DiplomMurtazin.View.ReceiptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Кассовый чек" 
+        Height="750" 
+        Width="380"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="SingleBorderWindow"
+        ResizeMode="NoResize"
+        Background="White"
+        FontFamily="Courier New"
+        FontSize="11"
+        Foreground="Black">
+
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Courier New"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+        </Style>
+
+        <Style x:Key="HeaderText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="15">
+        <StackPanel>
+            <!-- ШАПКА -->
+            <TextBlock Text="────────────────────────────────" 
+                       FontSize="11"
+                       Margin="0,0,0,5"/>
+
+            <TextBlock Text="КАССОВЫЙ ЧЕК" 
+                       Style="{StaticResource HeaderText}"/>
+
+            <TextBlock Margin="0,2,0,2">
+                <Run Text="Продажа №"/><Run Text="{Binding SaleNumber}"/><Run Text=" Смена №"/><Run Text="{Binding ShiftNumber}"/>
+            </TextBlock>
+
+            <TextBlock Text="{Binding DateTime, StringFormat=dd.MM.yy HH:mm}" 
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock Text="────────────────────────────────" 
+                       FontSize="11"
+                       Margin="0,0,0,10"/>
+
+            <!-- ТОВАРЫ -->
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,0,0,5">
+                            <TextBlock Text="{Binding Name}" 
+                           FontWeight="Bold"
+                           TextWrapping="Wrap"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- ИСПРАВЛЕНО: Убираем привязку TwoWay -->
+                                <TextBlock Grid.Column="0">
+                        <Run Text="{Binding Quantity, Mode=OneWay}"/>
+                        <Run Text=" X "/>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="1" 
+                               Text="{Binding Price, Mode=OneWay, StringFormat={}{0:F2}}" 
+                               HorizontalAlignment="Left"/>
+
+                                <TextBlock Grid.Column="2">
+                        <Run Text="= "/>
+                        <!-- Явно указываем Mode=OneWay -->
+                        <Run Text="{Binding Total, Mode=OneWay, StringFormat={}{0:F2}}"/>
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- ИТОГИ -->
+            <TextBlock Text="────────────────────────────────" 
+                       FontSize="11"
+                       Margin="0,10,0,5"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="ИТОГ =" 
+                           FontWeight="Bold"
+                           Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding TotalAmount, StringFormat={}{0:F2}}" 
+                           FontWeight="Bold"
+                           HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid Margin="0,2,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Сумма БЕЗ НДС =" 
+                           Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding AmountWithoutVat, StringFormat={}{0:F2}}" 
+                           HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid Margin="0,2,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="НАЛИЧНЫМИ =" 
+                           Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding CashPayment, StringFormat={}{0:F2}}" 
+                           HorizontalAlignment="Right"/>
+            </Grid>
+
+            <TextBlock Text="────────────────────────────────" 
+                       FontSize="11"
+                       Margin="0,5,0,10"/>
+
+            <!-- ИНФОРМАЦИЯ О КОМПАНИИ -->
+            <TextBlock Text="{Binding CompanyName}" 
+                       FontWeight="Bold"
+                       TextWrapping="Wrap"/>
+
+            <TextBlock Text="{Binding Address}" 
+                       TextWrapping="Wrap"
+                       Margin="0,2,0,2"/>
+
+            <TextBlock Margin="0,2,0,2">
+                <Run Text="КАССИР "/><Run Text="{Binding Cashier}" FontWeight="Bold"/>
+            </TextBlock>
+
+            <TextBlock Text="{Binding Place, StringFormat=МЕСТО РАСЧЕТОВ: {0}}" 
+                       Margin="0,2,0,2"/>
+
+            <TextBlock Text="────────────────────────────────" 
+                       FontSize="11"
+                       Margin="0,5,0,5"/>
+
+            <!-- ФИСКАЛЬНЫЕ ДАННЫЕ -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Сайт ФНС:"/>
+                <TextBlock Grid.Column="1" Text="{Binding Website}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="РН ККТ:"/>
+                <TextBlock Grid.Column="1" Text="{Binding RnKkt}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="ЗН ККТ:"/>
+                <TextBlock Grid.Column="1" Text="{Binding ZnKkt}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="ФН N"/>
+                <TextBlock Grid.Column="1" Text="{Binding FnNumber}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="СНО:"/>
+                <TextBlock Grid.Column="1" Text="{Binding Sno}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="ФД №"/>
+                <TextBlock Grid.Column="1" Text="{Binding FdNumber, StringFormat={}{0:000000}}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="ФП:"/>
+                <TextBlock Grid.Column="1" Text="{Binding Fp}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="ИНН:"/>
+                <TextBlock Grid.Column="1" Text="{Binding Inn}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid Margin="0,5,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Смена №"/>
+                <TextBlock Grid.Column="1" Text="{Binding ShiftNumber, StringFormat={}{0:00}}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Чек №"/>
+                <TextBlock Grid.Column="1" Text="{Binding DocumentNumber, StringFormat={}{0:00000}}" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <TextBlock Text="ПРИХОД" 
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,5,0,5"/>
+
+            <TextBlock Text="{Binding DateTime, StringFormat=dd.MM.yy HH:mm}" 
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock Text="────────────────────────────────" 
+                       FontSize="11"
+                       Margin="0,0,0,10"/>
+
+            <!-- КНОПКИ -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <Button Content="Печать PDF" 
+                        Width="120" Height="40" Margin="5"
+                        Click="PrintPdf_Click"
+                        Background="#3498db" 
+                        Foreground="White"
+                        Cursor="Hand"/>
+
+                <Button Content="Закрыть" 
+                        Width="100" Height="40" Margin="5"
+                        Click="Close_Click"
+                        Background="#95a5a6" 
+                        Foreground="White"
+                        Cursor="Hand"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

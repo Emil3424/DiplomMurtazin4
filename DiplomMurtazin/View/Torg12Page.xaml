@@ -1,0 +1,225 @@
+<Page x:Class="DiplomMurtazin.View.Torg12Page"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="ТОРГ-12"
+      Loaded="Page_Loaded"
+      Background="#ecf0f1">
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="420"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: products -->
+        <Grid Grid.Column="0" Margin="0,0,15,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0"
+                       Text="ТОРГ-12: выбор товаров"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="#2c3e50"
+                       Margin="0,0,0,15"/>
+
+            <TextBox Grid.Row="1"
+                     Height="36"
+                     Padding="10,5"
+                     Margin="0,0,0,10"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Поиск по названию/штрих-коду"/>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding FilteredProducts}"
+                      SelectedItem="{Binding SelectedProduct}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      Background="White"
+                      BorderBrush="#bdc3c7"
+                      BorderThickness="1"
+                      MouseDoubleClick="ProductsGrid_MouseDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding ProductID}" Width="60"/>
+                    <DataGridTextColumn Header="Наименование" Binding="{Binding ProductName}" Width="*"/>
+                    <DataGridTextColumn Header="Штрих-код" Binding="{Binding Barcode}" Width="140"/>
+                    <DataGridTextColumn Header="Цена" Binding="{Binding UnitPrice, StringFormat={}{0:F2}}" Width="90"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Right: document -->
+        <Border Grid.Column="1"
+                Background="White"
+                BorderBrush="#bdc3c7"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="15">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="ТОРГ-12"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="#2c3e50"
+                           Margin="0,0,0,10"/>
+
+                <Grid Grid.Row="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock Text="Номер" FontWeight="SemiBold"/>
+                        <TextBox Height="32" Padding="10,5" Text="{Binding DocumentNumber}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                        <TextBlock Text="Дата" FontWeight="SemiBold"/>
+                        <DatePicker SelectedDate="{Binding DocumentDate}" Height="32"/>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Grid.Row="2" Margin="0,0,0,10">
+                    <TextBlock Text="Кому отпустить" FontWeight="SemiBold"/>
+                    <TextBox Height="32" Padding="10,5" Text="{Binding ReceiverName}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="3" Margin="0,0,0,10">
+                    <TextBlock Text="Адрес получателя" FontWeight="SemiBold"/>
+                    <TextBox Height="32" Padding="10,5" Text="{Binding ReceiverAddress}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="4" Margin="0,0,0,10">
+                    <TextBlock Text="Основание отпуска" FontWeight="SemiBold"/>
+                    <TextBox Height="32" Padding="10,5" Text="{Binding Basis}"/>
+                </StackPanel>
+
+                <Border Grid.Row="5" Background="#f8f9fa" CornerRadius="6" Padding="10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Добавить товар"
+                                    Width="140"
+                                    Height="32"
+                                    Margin="0,0,8,0"
+                                    Command="{Binding AddItemCommand}"
+                                    Background="#27ae60"
+                                    Foreground="White"/>
+                            <Button Content="Удалить"
+                                    Width="90"
+                                    Height="32"
+                                    Margin="0,0,8,0"
+                                    Command="{Binding RemoveItemCommand}"
+                                    Background="#e74c3c"
+                                    Foreground="White"/>
+                            <Button Content="Очистить"
+                                    Width="90"
+                                    Height="32"
+                                    Command="{Binding ClearCommand}"
+                                    Background="#95a5a6"
+                                    Foreground="White"/>
+                        </StackPanel>
+
+                        <DataGrid ItemsSource="{Binding Items}"
+                                  SelectedItem="{Binding SelectedItem}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  Background="White"
+                                  BorderBrush="#bdc3c7"
+                                  BorderThickness="1"
+                                  Height="220">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="*"/>
+                                <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="70"/>
+                                <DataGridTextColumn Header="Цена" Binding="{Binding UnitPrice, StringFormat={}{0:F2}}" Width="80"/>
+                                <DataGridTextColumn Header="Сумма" Binding="{Binding Total, StringFormat={}{0:F2}}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Text="{Binding TotalAmount, StringFormat=Итого: {0:F2} ₽}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="#2c3e50"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="6"
+                        Background="#f8f9fa"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Новые товары из импорта (нужно создать)"
+                                   FontWeight="Bold"
+                                   Foreground="#2c3e50"
+                                   Margin="0,0,0,8"/>
+                        <DataGrid ItemsSource="{Binding MissingItems}"
+                                  SelectedItem="{Binding SelectedMissingItem}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  Background="White"
+                                  BorderBrush="#bdc3c7"
+                                  BorderThickness="1"
+                                  Height="120">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Товар" Binding="{Binding TempProductName}" Width="*"/>
+                                <DataGridTextColumn Header="ШК" Binding="{Binding TempBarcode}" Width="100"/>
+                                <DataGridTextColumn Header="Кол" Binding="{Binding Quantity}" Width="50"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <Button Content="Создать товар и добавить"
+                                Height="32"
+                                Margin="0,8,0,0"
+                                Command="{Binding CreateProductFromMissingCommand}"
+                                Background="#8e44ad"
+                                Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                    <Button Content="Сохранить черновик"
+                            Width="160"
+                            Height="36"
+                            Margin="0,0,8,0"
+                            Command="{Binding SaveDraftCommand}"
+                            Background="#3498db"
+                            Foreground="White"/>
+                    <Button Content="Экспорт ТОРГ-12"
+                            Width="150"
+                            Height="36"
+                            Margin="0,0,8,0"
+                            Command="{Binding ExportTorg12Command}"
+                            Background="#2c3e50"
+                            Foreground="White"/>
+                    <Button Content="Импорт"
+                            Width="90"
+                            Height="36"
+                            Command="{Binding ImportTorg12Command}"
+                            Background="#16a085"
+                            Foreground="White"/>
+                </StackPanel>
+
+                <Border Grid.Row="8" Background="{Binding StatusColor}" CornerRadius="6" Padding="10">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="White" FontWeight="SemiBold"/>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
+

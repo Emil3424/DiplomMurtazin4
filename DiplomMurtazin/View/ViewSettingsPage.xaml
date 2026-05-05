@@ -1,0 +1,235 @@
+﻿<Page x:Class="DiplomMurtazin.View.ViewSettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:core="clr-namespace:DiplomMurtazin.Core"
+      Title="Настройка представлений"
+      Loaded="Page_Loaded"
+      Background="#ecf0f1">
+
+    <Page.Resources>
+        <core:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Page.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Заголовок через все колонки -->
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" 
+                   Text="Настройка представлений" 
+                   FontSize="32" 
+                   FontWeight="Bold"
+                   Foreground="#2c3e50"
+                   Margin="0,0,0,20"/>
+
+        <!-- Левая панель - список таблиц -->
+        <Border Grid.Row="1" Grid.Column="0"
+                Background="White" 
+                Padding="15" 
+                CornerRadius="5" 
+                Margin="0,0,10,0"
+                BorderBrush="#bdc3c7"
+                BorderThickness="1">
+
+            <StackPanel>
+                <TextBlock Text="Доступные таблицы" 
+                           FontSize="18" 
+                           FontWeight="Bold"
+                           Foreground="#2c3e50"
+                           Margin="0,0,0,15"/>
+
+                <ListBox x:Name="TablesListBox"
+                         ItemsSource="{Binding AvailableTables}"
+                         SelectedItem="{Binding SelectedTable}"
+                         DisplayMemberPath="Name"
+                         Height="400"
+                         BorderBrush="#bdc3c7"
+                         BorderThickness="1"
+                         SelectionChanged="TablesListBox_SelectionChanged">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="FontSize" Value="14"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+
+                <TextBlock Text="{Binding TableInfo}" 
+                           Foreground="#7f8c8d"
+                           FontSize="12"
+                           Margin="0,10,0,0"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Правая панель - настройка полей -->
+        <Border Grid.Row="1" Grid.Column="1"
+                Background="White" 
+                Padding="15" 
+                CornerRadius="5" 
+                Margin="10,0,0,0"
+                BorderBrush="#bdc3c7"
+                BorderThickness="1">
+
+            <StackPanel>
+                <TextBlock Text=" Настройка полей" 
+                           FontSize="18" 
+                           FontWeight="Bold"
+                           Foreground="#2c3e50"
+                           Margin="0,0,0,15"/>
+
+                <TextBlock Text="{Binding SelectedTable.Name, StringFormat=Таблица: {0}}" 
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="#3498db"
+                           Margin="0,0,0,10"
+                           Visibility="{Binding SelectedTable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <ScrollViewer Height="400" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding TableColumns}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#ecf0f1" 
+                                        BorderThickness="0,0,0,1"
+                                        Padding="5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <CheckBox Grid.Column="0" 
+                                                  IsChecked="{Binding IsSelected}"
+                                                  Margin="0,0,10,0"
+                                                  VerticalAlignment="Center"/>
+
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="{Binding DisplayName}"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"/>
+
+                                        <TextBlock Grid.Column="2" 
+                                                   Text="{Binding TypeName}"
+                                                   Foreground="#7f8c8d"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Кнопки управления -->
+                <StackPanel Orientation="Horizontal" 
+                            HorizontalAlignment="Center"
+                            Margin="0,20,0,0">
+
+                    <Button Content=" Выбрать все" 
+                            Width="100" Height="35" Margin="5"
+                            Command="{Binding SelectAllCommand}"
+                            Background="#3498db" 
+                            Foreground="White"
+                            Cursor="Hand"/>
+
+                    <Button Content=" Снять все" 
+                            Width="100" Height="35" Margin="5"
+                            Command="{Binding DeselectAllCommand}"
+                            Background="#95a5a6" 
+                            Foreground="White"
+                            Cursor="Hand"/>
+
+                    <Button Content=" Сохранить представление" 
+                            Width="160" Height="35" Margin="5"
+                            Command="{Binding SaveViewCommand}"
+                            Background="#27ae60" 
+                            Foreground="White"
+                            Cursor="Hand"/>
+                </StackPanel>
+
+                <!-- Поле для имени представления -->
+                <StackPanel Orientation="Horizontal" 
+                            HorizontalAlignment="Center"
+                            Margin="0,10,0,0">
+
+                    <TextBlock Text="Название:" 
+                               FontSize="14"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+
+                    <TextBox Text="{Binding ViewName}" 
+                             Width="250" Height="30"
+                             Padding="5"
+                             BorderBrush="#bdc3c7"
+                             BorderThickness="1"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Нижняя панель - сохраненные представления -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2"
+        Background="White" 
+        Padding="15" 
+        CornerRadius="5" 
+        Margin="0,20,0,0"
+        BorderBrush="#bdc3c7"
+        BorderThickness="1">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                   Text=" Сохраненные представления:" 
+                   FontSize="14" 
+                   FontWeight="SemiBold"
+                   VerticalAlignment="Center"
+                   Margin="0,0,20,0"/>
+
+                <ComboBox Grid.Column="1" 
+                  ItemsSource="{Binding SavedViews}"
+                  SelectedItem="{Binding SelectedView}"
+                  DisplayMemberPath="Name"
+                  Height="35"
+                  Margin="0,0,20,0"/>
+
+                <Button Grid.Column="2" 
+                Content="Просмотр" 
+                Width="100" Height="35" Margin="5"
+                Command="{Binding ViewDisplayCommand}"
+                Background="#3498db" 
+                Foreground="White"
+                Cursor="Hand"/>
+
+                <Button Grid.Column="3" 
+                Content="Применить" 
+                Width="100" Height="35" Margin="5"
+                Command="{Binding ApplyViewCommand}"
+                Background="#f39c12" 
+                Foreground="White"
+                Cursor="Hand"/>
+
+                <Button Grid.Column="4" 
+                Content=" Удалить" 
+                Width="100" Height="35" Margin="5"
+                Command="{Binding DeleteViewCommand}"
+                Background="#e74c3c" 
+                Foreground="White"
+                Cursor="Hand"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
